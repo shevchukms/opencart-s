@@ -7,8 +7,8 @@ RUN apk add --no-cache libzip-dev zlib-dev libpng-dev libjpeg-turbo-dev freetype
 
 RUN mkdir -p /usr/local/apache2/htdocs/upload/1
 
-RUN wget https://github.com/opencart/opencart/releases/download/4.0.1.1/opencart-4.0.1.1.zip 
-RUN mv opencart-4.0.1.1.zip /tmp/opencart.zip
+RUN wget https://github.com/opencart/opencart/releases/download/4.0.1.0/opencart-4.0.1.0.zip 
+RUN mv opencart-4.0.1.0.zip /tmp/opencart.zip
 RUN unzip /tmp/opencart.zip -d /tmp/ && mv /tmp/upload/* /usr/local/apache2/htdocs/upload/ && rm -rf /tmp/*
 
 RUN mv /usr/local/apache2/htdocs/upload/config-dist.php /usr/local/apache2/htdocs/upload/config.php 
