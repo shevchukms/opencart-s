@@ -4,8 +4,8 @@ services:
 
   php-fpm:
     build: ./php-fpm
-    volumes:
-      - ../:/usr/local/apache2/htdocs/
+    # volumes:
+    #   - ../:/usr/local/apache2/htdocs/
     expose:
       - "9000"
     environment:
@@ -17,8 +17,8 @@ services:
 
   apache:
     build: ./apache
-    volumes:
-      - ../:/usr/local/apache2/htdocs/
+    # volumes:
+    #   - ../:/usr/local/apache2/htdocs/
     ports:
       - "80:80"
     depends_on:
