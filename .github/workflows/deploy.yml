@@ -1,0 +1,61 @@
+name: Build and push Docker image
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  ECR_REGISTRY: mydockerecrregistry
+  IMAGE_NAME: my-docker-opencart
+  AWS_REGION: us-east-1
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build and tag Docker image
+      id: build-image
+      run: |
+        docker-compose -f opencart-docker/docker-compose.yml build
+        docker tag ${IMAGE_NAME}_opencart ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+    - name: Push Docker image to ECR
+      id: push-image
+      run: |
+        docker push ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+
+    - name: Create EC2 instance with Docker image
+      id: create-ec2
+      uses: einaregilsson/create-ec2-instance@v1.5.0
+      with:
+        access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        region: us-east-1
+        image-id: ami-0c94855ba95c71c99 # Amazon Linux 2 AMI ID
+        instance-type: t2.micro
+        security-group-ids: sg-03d00b559cca43289 # Security group ID
+        subnet-id: subnet-0e13ce5f751a9a0d0 # Subnet ID
+        user-data: |
+          #!/bin/bash
+          docker run -d -p 80:80 ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+    - name: Output EC2 instance IP
+      run: echo ${{ steps.create-ec2.outputs.public-ip }}
