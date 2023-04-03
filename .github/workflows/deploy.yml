@@ -42,20 +42,54 @@ jobs:
         docker push ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
 
 
-    - name: Create EC2 instance with Docker image
-      id: create-ec2
-      uses: einaregilsson/create-ec2-instance@v1.5.0
-      with:
-        access-key: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        secret-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        region: us-east-1
-        image-id: ami-0c94855ba95c71c99 # Amazon Linux 2 AMI ID
-        instance-type: t2.micro
-        security-group-ids: sg-03d00b559cca43289 # Security group ID
-        subnet-id: subnet-0e13ce5f751a9a0d0 # Subnet ID
-        user-data: |
-          #!/bin/bash
-          docker run -d -p 80:80 ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+    
 
-    - name: Output EC2 instance IP
-      run: echo ${{ steps.create-ec2.outputs.public-ip }}
+ 	- name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 1.0.9
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Install Terraform dependencies
+      run: terraform init
+
+    - name: Plan Terraform changes
+      id: plan
+      run: terraform plan -out=tfplan
+
+    - name: Create EC2 instance
+      uses: terraform-aws-modules/terraform-aws-ec2-instance@v2.5.0
+      with:
+        source: terraform-aws-modules/ec2-instance/aws
+        version: 2.5.0
+        instance_count: 1
+        ami: ami-0c94855ba95c71c99
+        instance_type: t2.micro
+        key_name: ec2keypair
+        vpc_security_group_ids: sg-03d00b559cca43289
+        subnet_id: subnet-0e13ce5f751a9a0d0
+        user_data: |
+          #!/bin/bash
+          echo "Hello World!" > index.html
+          nohup python -m SimpleHTTPServer 80 &
+        tags: |
+          {
+            Name = "My EC2 Instance"
+            Environment = "Production"
+          }
+
+    - name: Deploy Docker image
+      run: |
+        $(aws ecr get-login --no-include-email --region us-east-1)
+        docker run --rm \
+          -e AWS_REGION=us-east-1 \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
