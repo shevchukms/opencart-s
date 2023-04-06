@@ -35,7 +35,8 @@ jobs:
       id: build-image
       run: |
         docker-compose -f opencart-docker/docker-compose.yml build
-        docker tag ${IMAGE_NAME} ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        docker tag ${{ env.IMAGE_NAME }}_apache ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}_apache:latest
+        docker tag ${{ env.IMAGE_NAME }}_php-fpm ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}_php-fpm:latest
 
     - name: Push Docker image to ECR
       id: push-image
