@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 env:
-  ECR_REGISTRY: 438267616125.dkr.ecr.us-east-1.amazonaws.com/mydockerecrregistry
+  ECR_REGISTRY: 438267616125.dkr.ecr.us-east-1.amazonaws.com
   IMAGE_NAME: opencart-docker
   AWS_REGION: us-east-1
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
