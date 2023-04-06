@@ -40,6 +40,7 @@ jobs:
     - name: Push Docker image to ECR
       id: push-image
       run: |
-        docker push ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        docker push ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}_apache:latest
+        docker push ${{ env.ECR_REGISTRY }}/${{ env.IMAGE_NAME }}_php-fpm:latest
 
 
